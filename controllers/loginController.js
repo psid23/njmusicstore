@@ -1,58 +1,19 @@
 const bodyParser = require('body-parser');
-const dotenv = require('dotenv');
-dotenv.config();
 module.exports = function (app) {
-    /* MONGOOSE SETUP */
-    const mongoose = require('mongoose');
-    mongoose.connect('mongodb+srv://' + process.env.MONGOUSER + ':' + process.env.MONGOPASSWORD + '@cluster0.jlrkv.mongodb.net/njmusicstore?retryWrites=true&w=majority', { useNewUrlParser: true });
-    /*Replace the above connection string with the actual connection string of your MongoDB database*/
-    const Schema = mongoose.Schema;
-    const UserDetail = new Schema({
-        username: String,
-        password: String
-    });
-    const UserDetails = mongoose.model('userInfo', UserDetail, 'userInfo');
+    const UserDetails = require('/Users/vlad.petrenciuc/NodeCourse/njmusicstore/models/userInfo.js')
     /*  PASSPORT SETUP  START*/
-    const passport = require('passport');
+    const passport = require('/Users/vlad.petrenciuc/NodeCourse/njmusicstore/config/passport.js');
     app.use(passport.initialize());
     app.use(passport.session());
     app.get('/success', (req, res) => res.render('index', { username: req.query.username, title: 'Home' }));
     app.get('/error', (req, res) => res.render('login', { username: '', title: 'Login', errormessage: 'An error occured while logging in. Please check your username and password!' }));
-    passport.serializeUser(function (user, cb) {
-        cb(null, user.id);
-    });
-    passport.deserializeUser(function (id, cb) {
-        User.findById(id, function (err, user) {
-            cb(err, user);
-        });
-    });
+    
     /* PASSPORT SETUP STOP */
     app.post('/',
         passport.authenticate('local', { failureRedirect: '/error' }),
         function (req, res) {
             res.redirect('/home', { username: req.user.username });
         });
-    /* PASSPORT LOCAL AUTHENTICATION */
-    const LocalStrategy = require('passport-local').Strategy;
-    passport.use(new LocalStrategy(
-        function (username, password, done) {
-            UserDetails.findOne({
-                username: username
-            }, function (err, user) {
-                if (err) {
-                    return done(err);
-                }
-
-                if (!user) {
-                    return done(null, false);
-                }
-                if (user.password != password) {
-                    return done(null, false);
-                }
-                return done(null, user);
-            });
-        }
-    ));
     app.get('/', function (req, res) {
         res.render('index', { username: '', title: 'Home' });
     });

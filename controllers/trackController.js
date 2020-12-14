@@ -1,28 +1,8 @@
 const bodyParser = require('body-parser');
-const dotenv = require('dotenv');
-dotenv.config();
-const mongoose = require('mongoose');
-mongoose.connect('mongodb+srv://' + process.env.MONGOUSER + ':' + process.env.MONGOPASSWORD + '@cluster0.jlrkv.mongodb.net/njmusicstore?retryWrites=true&w=majority', { useNewUrlParser: true });
-/*Replace the above connection string with the actual connection string of your MongoDB database*/
-const trackSchema = new mongoose.Schema({
-    trackName: String,
-    artistName: String,
-    albumName: String,
-    albumYear: String,
-    albumGenre: String,
-    trackPrice: String
-});
-const Track = mongoose.model('Track', trackSchema);
-const userCartSchema = new mongoose.Schema({
-    username: String,
-    trackid: String,
-    trackname: String,
-    quantity: String,
-    unitprice: String
-});
-const CartItem = mongoose.model('userCart', userCartSchema);
 const urlencodedParser = bodyParser.urlencoded({ extended: false });
 module.exports = function (app) {
+    const Track = require('/Users/vlad.petrenciuc/NodeCourse/njmusicstore/models/track.js')
+    const CartItem = require('/Users/vlad.petrenciuc/NodeCourse/njmusicstore/models/cartItem.js')
     app.get('/track', function (req, res) {
         Track.find({}, function (err, data) {
             if (err) throw err;
