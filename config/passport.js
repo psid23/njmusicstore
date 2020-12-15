@@ -1,5 +1,4 @@
 const passport = require('passport');
-
 /* PASSPORT LOCAL AUTHENTICATION */
 const LocalStrategy = require('passport-local').Strategy;
 const UserDetails = require("../models/userInfo");
