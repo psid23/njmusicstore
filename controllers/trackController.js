@@ -1,131 +1,172 @@
-var bodyParser=require('body-parser');
-var mongoose= require('mongoose');
-mongoose.connect('mongodb://username:password@databaseserver:port/databasename',{ useNewUrlParser: true});
+const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
+
+const ADDRESS = '127.0.0.1';
+const PORT = `mongodb://${ADDRESS}:27017/njmusicstore` || process.env.PORT;
+
+mongoose.connect(
+    PORT,
+    {
+        useNewUrlParser: true,
+        useCreateIndex: true,
+    }
+);
+
 /*Replace the above connection string with the actual connection string of your MongoDB database*/
-var trackSchema= new mongoose.Schema({    
-    trackName:String,
-    artistName:String,
-    albumName:String,
-    albumYear:String,
-    albumGenre:String,  
-    trackPrice:String
+const trackSchema= new mongoose.Schema({    
+    trackName: String,
+    artistName: String,
+    albumName: String,
+    albumYear: String,
+    albumGenre: String,  
+    trackPrice: String
  });
-var Track=mongoose.model('Track',trackSchema);
-var userCartSchema = new mongoose.Schema({
-    username:String,
-    trackid:String,
-    trackname:String,
-    quantity:String,
-    unitprice:String
+
+const userCartSchema = new mongoose.Schema({
+    username: String,
+    trackId: String,
+    trackName: String,
+    quantity: String,
+    unitPrice: String
 });
-var CartItem = mongoose.model('userCart',userCartSchema);
-var urlencodedParser=bodyParser.urlencoded({extended:false});
-module.exports=function(app){      
-    app.get('/track',function(req,res){
-        Track.find({},function(err,data){
+
+const Track = mongoose.model('Track', trackSchema);
+const CartItem = mongoose.model('userCart', userCartSchema);
+
+const trackTest = new Track({
+    trackName: 'Track name name test',
+    artistName: 'Artist name name test',
+    albumName: 'Album name test',
+    albumYear: 'Year name test',
+    albumGenre: 'Album genre test',  
+    trackPrice: 'Track price test'
+});
+
+const cartItemTest = new CartItem({
+    username: 'User name test',
+    trackId: 'Track id test',
+    trackName: 'Track name test',
+    quantity: 'Quantity test',
+    unitPrice: 'Price test'
+});
+
+trackTest.save()
+cartItemTest.save()
+
+const urlencodedParser=bodyParser.urlencoded({extended:false});
+
+const trackController= (app) => {      
+    app.get('/track', (req,res) =>
+        Track.find(
+            {},
+            (err,data) => {
+             if(err) throw err;
+
+                return !!req.query.username
+                ? res.render('track-list',{tracks: data,title: 'Product List', username:req.query.username})
+                : res.render('track-list',{tracks: data,title: 'Product List', username:''});
+            })
+    );
+
+    app.get('/track-list', (req,res) =>
+        Track.find(
+            {},
+            (err,data) => {
+                 if(err) throw err;
+
+                 return !!req.query.username
+                ? res.render('track-list',{tracks: data,title: 'Product List', username:req.query.username})
+                : res.render('track-list',{tracks: data,title: 'Product List', username:''});
+            })
+     );
+
+     app.get(
+        '/track-add',
+        (req,res) => 
+            Track.find(
+            {},
+            (err,data) => {
                 if(err) throw err;
-                if(req.query.username!=null)
-                 {
-                    res.render('track-list',{tracks: data,title: 'Product List', username:req.query.username});
-                 }
-                 else
-                 {
-                    res.render('track-list',{tracks: data,title: 'Product List', username:''});
-                 }                
-        });
-    });
-    app.get('/track-list',function(req,res){
-        Track.find({},function(err,data){
-                 if(err) throw err;
-                 if(req.query.username!=null)
-                 {
-                    res.render('track-list',{tracks: data,title: 'Product List', username:req.query.username});
-                 }
-                 else
-                 {
-                    res.render('track-list',{tracks: data,title: 'Product List', username:''});
-                 }                 
-         });
-     });
-     app.get('/track-add',function(req,res){
-        Track.find({},function(err,data){
-                 if(err) throw err;
-                 if(req.query.username!=null)
-                 {
-                    res.render('track-add',{tracks: data,title: 'Add Track', username:req.query.username});
-                 }
-                 else
-                 {
-                    res.render('track-add',{tracks: data,title: 'Add Track', username:''});
-                 }
-         });
-     });
-    app.delete('/track/:_id',function(req,res){        
-        Track.find({_id: req.params._id})
-              .remove(function(err,data){                  
-                  if(err) throw err;
-                  if(req.query.username!=null)
-                  {
-                    res.render('track-add',{tracks: data,title: 'Add Track', username:req.query.username});
-                  }
-                  else
-                  {
-                    res.render('track-add',{tracks: data,title: 'Add Track', username:''});
-                  }                  
-         });
-     });
-    app.post('/track-add',urlencodedParser,function(req,res){
-        var newTrack= Track(req.body).save(function(err,data){
-            if(err) throw err;  
-            if(req.query.username!=null)
-            {          
-                res.render('track-add',{tracks:data, title:'Track', username:req.query.username});
-            }
-            else
-            {
-                res.render('track-add',{tracks:data, title:'Track', username:''});
-            }
-        });       
-    });
-    app.post('/cart',urlencodedParser,function(req,res){
-        var newCartItem=CartItem(req.body).save(function(err,data){
-            if(err) throw err;   
-            if(req.query.username!=null)
-            {
-                res.render('cart',{cartitems:data, title:'Shopping Cart', username:req.query.username});
-            }
-            else
-            {
-                res.render('cart',{cartitems:data, title:'Shopping Cart', username:''});
-            }
-        });        
-    });
-    app.get('/cart',function(req,res){
-        CartItem.find({username: req.query.username},function(err,data){
-            if(err) throw err;
-            if(req.query.username!=null)
-            {
-                //console.log(data);
-                res.render('cart',{cartitems:data, title:'Shopping Cart', username:req.query.username});
-            }
-            else
-            {
-                res.render('cart',{cartitems:data, title:'Shopping Cart', username:''});
-            }               
-        });
-    });
-    app.delete('/cart/:_id',function(req,res){        
-        CartItem.find({_id: req.params._id})
-              .remove(function(err,data){                  
-                  if(err) throw err;
-                  if(req.query.username!=null)
-                    {
-                        res.render('cart',{cartitems:data, title:'Shopping Cart', username:req.query.username});
-                    }
-                    else
-                    {
-                        res.render('cart',{cartitems:data, title:'Shopping Cart', username:''});
-                    }              
-         });
-     });
+
+                return !!req.query.username
+                ? res.render('track-add',{tracks: data,title: 'Add Track', username:req.query.username})
+                : res.render('track-add',{tracks: data,title: 'Add Track', username:''});
+            })
+     );
+
+    app.delete(
+        '/track/:_id',
+        (req,res) =>
+            Track
+            .find({_id: req.params._id})
+            .remove( (err,data) => {                  
+                if(err) throw err;
+            
+                return !!req.query.username
+                ? res.render('track-add',{tracks: data,title: 'Add Track', username:req.query.username})
+                : res.render('track-add',{tracks: data,title: 'Add Track', username:''});
+            })
+    );
+
+    app.post(
+        '/track-add',
+        urlencodedParser, 
+        (req,res) => 
+            Track(req.body)
+            .save((err,data) => {
+                if(err) throw err;
+
+                return !!req.query.username
+                ? res.render('track-add',{tracks:data, title:'Track', username:req.query.username})
+                : res.render('track-add',{tracks:data, title:'Track', username:''});
+            }) 
+    );
+
+    app.post(
+        '/cart',
+        urlencodedParser,
+        (req,res) =>
+            CartItem(req.body)
+            .save( (err,data) => {
+                if(err) throw err;
+
+                return !!req.query.username
+                ? res.render('cart',{cartItems:data, title:'Shopping Cart', username:req.query.username})
+                : res.render('cart',{cartItems:data, title:'Shopping Cart', username:''});
+            })
+    );
+
+    app.get(
+        '/cart',
+        (req,res) =>
+            CartItem
+            .find(
+                {username: req.query.username},
+                (err,data) => {
+                    if(err) throw err;
+
+                    return !!req.query.username
+                    ? res.render('cart',{cartItems:data, title:'Shopping Cart', username:req.query.username})
+                    : res.render('cart',{cartItems:data, title:'Shopping Cart', username:''});
+            })
+    );
+
+    app.delete(
+        '/cart/:_id',
+        (req,res) => 
+            CartItem
+            .find({_id: req.params._id})
+            .remove(
+                (err,data) => {                  
+                    if(err) throw err;
+
+                    return !!req.query.username
+                    ? res.render('cart',{cartItems:data, title:'Shopping Cart', username:req.query.username})
+                    : res.render('cart',{cartItems:data, title:'Shopping Cart', username:''});
+            })
+    );
 };
+
+module.exports = {
+    trackController
+  };
