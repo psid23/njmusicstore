@@ -9,12 +9,16 @@ mongoose.connect(
     {
         useNewUrlParser: true,
         useCreateIndex: true,
+        useUnifiedTopology: true,
     }
 );
 
 /*Replace the above connection string with the actual connection string of your MongoDB database*/
 const trackSchema= new mongoose.Schema({    
-    trackName: String,
+    trackName: {
+        type: String,
+        unique: true
+    },
     artistName: String,
     albumName: String,
     albumYear: String,
@@ -23,7 +27,10 @@ const trackSchema= new mongoose.Schema({
  });
 
 const userCartSchema = new mongoose.Schema({
-    username: String,
+    username: {
+        type: String,
+        unique: true
+    },
     trackId: String,
     trackName: String,
     quantity: String,
@@ -50,8 +57,13 @@ const cartItemTest = new CartItem({
     unitPrice: 'Price test'
 });
 
-trackTest.save()
-cartItemTest.save()
+trackTest
+.save()
+.catch((e) => console.log('Track already exists!'))
+
+cartItemTest
+.save()
+.catch((e) => console.log('Item already exists!'))
 
 const urlencodedParser=bodyParser.urlencoded({extended:false});
 
